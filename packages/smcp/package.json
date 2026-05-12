@@ -1,5 +1,5 @@
 {
-  "name": "smcp",
+  "name": "@datacline/smcp",
   "version": "0.1.0",
   "description": "CLI for Secure MCP Gateway workflows",
   "homepage": "https://github.com/datacline/secure-mcp-gateway/tree/main/packages/smcp#readme",
@@ -22,7 +22,7 @@
   "type": "module",
   "main": "./smcp.js",
   "bin": {
-    "smcp": "./bin/smcp.js"
+    "smcp": "bin/smcp.js"
   },
   "files": [
     "bin",

@@ -214,17 +214,17 @@ Install the MCP extension and configure:
 
 ### Use the `smcp` CLI
 
-The project also ships an npm CLI package named `smcp` for common gateway, group, and server workflows.
+The project also ships an npm CLI package named `@datacline/smcp` for common gateway, group, and server workflows.
 
 **Install globally:**
 ```bash
-npm install -g smcp
+npm install -g @datacline/smcp
 smcp --help
 ```
 
 **Run without global install:**
 ```bash
-npx smcp commands
+npx @datacline/smcp commands
 ```
 
 **Run from this repo while developing:**

@@ -66,11 +66,11 @@
     "clean": "docker-compose down -v",
     "build": "docker-compose build",
     "test": "echo 'Run service-specific tests'",
-    "smcp": "npm --workspace smcp run smcp --",
+    "smcp": "npm --workspace @datacline/smcp run smcp --",
     "dev:frontend": "cd frontend && npm run dev",
     "dev:gateway": "cd server-java && ./mvnw spring-boot:run",
     "dev:policy": "cd policy-engine-go && go run main.go",
-    "dev:smcp": "npm --workspace smcp run smcp --"
+    "dev:smcp": "npm --workspace @datacline/smcp run smcp --"
   },
   "workspaces": [
     "frontend",

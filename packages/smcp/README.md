@@ -13,13 +13,13 @@ It is designed for open-source usage:
 Global install:
 
 ```bash
-npm install -g smcp
+npm install -g @datacline/smcp
 ```
 
 Run without global install:
 
 ```bash
-npx smcp --help
+npx @datacline/smcp --help
 ```
 
 ## Requirements
@@ -50,7 +50,7 @@ npm run smcp -- --help
 You can also run the package directly:
 
 ```bash
-npm --workspace smcp run smcp -- commands
+npm --workspace @datacline/smcp run smcp -- commands
 ```
 
 Or from inside `packages/smcp`:
@@ -124,13 +124,13 @@ smcp server reload
 From the repo root, publish the workspace package explicitly:
 
 ```bash
-npm publish --workspace smcp
+npm publish --workspace @datacline/smcp
 ```
 
 Preview the publish payload:
 
 ```bash
-npm pack --dry-run --workspace smcp
+npm pack --dry-run --workspace @datacline/smcp
 ```
 
-If the unscoped name `smcp` is already taken on npm, switch to a scoped package name such as `@datacline/smcp` before publishing.
+The npm package name is `@datacline/smcp`, but the installed executable command remains `smcp`.
