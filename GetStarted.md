@@ -2,23 +2,23 @@
 
 This guide shows the two main ways to use Secure MCP Gateway:
 
-- `CLI` via the `smcp` npm package
+- `CLI` via the `@datacline/smcp` npm package
 - `UI` via the local web application
 
 ## CLI
 
-The CLI is published as the npm package `smcp`.
+The CLI is published as the npm package `@datacline/smcp`.
 
 ### Install
 
 ```bash
-npm install -g smcp
+npm install -g @datacline/smcp
 ```
 
 Or run it without installing globally:
 
 ```bash
-npx smcp --help
+npx @datacline/smcp --help
 ```
 
 ### Common Commands
