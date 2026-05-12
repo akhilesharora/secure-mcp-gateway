@@ -164,3 +164,7 @@ tmp/
 temp/
 *.tmp
 .env.docker
+
+# Generated policy files
+policy-engine-go/policies/unified/*.yaml
+

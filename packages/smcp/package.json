@@ -1,0 +1,45 @@
+{
+  "name": "smcp",
+  "version": "0.1.0",
+  "description": "CLI for Secure MCP Gateway workflows",
+  "homepage": "https://github.com/datacline/secure-mcp-gateway/tree/main/packages/smcp#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/datacline/secure-mcp-gateway.git",
+    "directory": "packages/smcp"
+  },
+  "bugs": {
+    "url": "https://github.com/datacline/secure-mcp-gateway/issues"
+  },
+  "keywords": [
+    "mcp",
+    "cli",
+    "secure-mcp-gateway",
+    "smcp"
+  ],
+  "license": "MIT",
+  "author": "Datacline",
+  "type": "module",
+  "main": "./smcp.js",
+  "bin": {
+    "smcp": "./bin/smcp.js"
+  },
+  "files": [
+    "bin",
+    "smcp.js",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "preferGlobal": true,
+  "scripts": {
+    "smcp": "node ./bin/smcp.js",
+    "start": "node ./smcp.js",
+    "test": "node ./bin/smcp.js --help",
+    "commands": "node ./bin/smcp.js commands"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
