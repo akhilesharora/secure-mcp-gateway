@@ -1,6 +1,15 @@
 -- Secure MCP Gateway - Policy Engine Database Initialization
 -- This script runs automatically when PostgreSQL container is first created
 
+-- Create the Keycloak database on fresh bootstrap.
+-- PostgreSQL does not support CREATE DATABASE IF NOT EXISTS, so use \gexec.
+SELECT 'CREATE DATABASE keycloak'
+WHERE NOT EXISTS (
+    SELECT FROM pg_database WHERE datname = 'keycloak'
+)\gexec
+
+GRANT ALL PRIVILEGES ON DATABASE keycloak TO mcp_user;
+
 -- Connect to mcp_gateway database
 \c mcp_gateway
 

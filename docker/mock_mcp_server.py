@@ -1,181 +1,232 @@
 #!/usr/bin/env python3
 """
-Mock MCP Server for Docker - implementing proper MCP protocol with SSE transport
+Mock MCP Server for Docker.
+
+This server intentionally exposes a simple HTTP MCP endpoint at `/mcp`
+so it is reachable both from the local network and from the Java gateway,
+which uses streamable HTTP transport semantics.
 """
-import asyncio
 import uvicorn
-from mcp.server import Server
-from mcp.server.sse import SseServerTransport
-from mcp.types import Tool, TextContent, Resource, Prompt, PromptMessage
 from starlette.applications import Starlette
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 from starlette.routing import Route
 
-# Create MCP server instance
-mcp_server = Server("mock-mcp-server-docker")
 
-
-@mcp_server.list_tools()
-async def handle_list_tools() -> list[Tool]:
-    """List available tools"""
-    return [
-        Tool(
-            name="get_logs",
-            description="Get mock application logs",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": "Search query for logs"
-                    }
+TOOLS = [
+    {
+        "name": "get_logs",
+        "description": "Get mock application logs",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "Search query for logs"
                 }
             }
-        ),
-        Tool(
-            name="search_data",
-            description="Search mock data",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": "Search query"
-                    }
-                },
-                "required": ["query"]
+        }
+    },
+    {
+        "name": "search_data",
+        "description": "Search mock data",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "Search query"
+                }
+            },
+            "required": ["query"]
+        }
+    }
+]
+
+RESOURCES = [
+    {
+        "uri": "mock://resource1",
+        "name": "Mock Resource 1",
+        "description": "A mock resource for testing",
+        "mimeType": "text/plain"
+    },
+    {
+        "uri": "mock://resource2",
+        "name": "Mock Resource 2",
+        "description": "Another mock resource",
+        "mimeType": "application/json"
+    }
+]
+
+PROMPTS = [
+    {
+        "name": "greeting",
+        "description": "A simple greeting prompt",
+        "arguments": []
+    },
+    {
+        "name": "summarize",
+        "description": "Summarize text",
+        "arguments": [
+            {"name": "text", "description": "Text to summarize", "required": True}
+        ]
+    }
+]
+
+
+def success_response(request_id, result):
+    return JSONResponse({
+        "jsonrpc": "2.0",
+        "id": request_id,
+        "result": result
+    })
+
+
+def error_response(request_id, code, message, status_code=200):
+    return JSONResponse({
+        "jsonrpc": "2.0",
+        "id": request_id,
+        "error": {
+            "code": code,
+            "message": message
+        }
+    }, status_code=status_code)
+
+
+async def handle_root(_request: Request):
+    return JSONResponse({
+        "name": "mock-mcp-server",
+        "status": "ok",
+        "mcp_endpoint": "/mcp",
+        "health_endpoint": "/health"
+    })
+
+
+async def handle_health(_request: Request):
+    return JSONResponse({"status": "healthy"})
+
+
+async def handle_mcp_discovery(_request: Request):
+    return JSONResponse({
+        "protocolVersion": "2024-11-05",
+        "capabilities": {
+            "tools": {},
+            "resources": {},
+            "prompts": {}
+        },
+        "serverInfo": {
+            "name": "mock-mcp-server-docker",
+            "version": "1.0.0"
+        }
+    })
+
+
+async def handle_mcp_request(request: Request):
+    body = await request.json()
+    method = body.get("method")
+    request_id = body.get("id")
+    params = body.get("params") or {}
+
+    if method == "initialize":
+        return success_response(request_id, {
+            "protocolVersion": "2024-11-05",
+            "capabilities": {
+                "tools": {},
+                "resources": {},
+                "prompts": {}
+            },
+            "serverInfo": {
+                "name": "mock-mcp-server-docker",
+                "version": "1.0.0"
             }
-        )
-    ]
+        })
 
+    if method == "tools/list":
+        return success_response(request_id, {"tools": TOOLS})
 
-@mcp_server.call_tool()
-async def handle_call_tool(name: str, arguments: dict) -> list[TextContent]:
-    """Handle tool invocations"""
+    if method == "tools/call":
+        name = params.get("name")
+        arguments = params.get("arguments") or {}
 
-    if name == "get_logs":
-        query = arguments.get("query", "")
-        return [
-            TextContent(
-                type="text",
-                text=f"Mock logs for query: {query}"
-            )
-        ]
+        if name == "get_logs":
+            text = f"Mock logs for query: {arguments.get('query', '')}"
+        elif name == "search_data":
+            text = f"Mock search results for: {arguments.get('query', '')}"
+        else:
+            text = f"Unknown tool: {name}"
 
-    elif name == "search_data":
-        query = arguments.get("query", "")
-        return [
-            TextContent(
-                type="text",
-                text=f"Mock search results for: {query}"
-            )
-        ]
-
-    else:
-        return [
-            TextContent(
-                type="text",
-                text=f"Unknown tool: {name}"
-            )
-        ]
-
-
-@mcp_server.list_resources()
-async def handle_list_resources() -> list[Resource]:
-    """List available resources"""
-    return [
-        Resource(
-            uri="mock://resource1",
-            name="Mock Resource 1",
-            description="A mock resource for testing",
-            mimeType="text/plain"
-        ),
-        Resource(
-            uri="mock://resource2",
-            name="Mock Resource 2",
-            description="Another mock resource",
-            mimeType="application/json"
-        )
-    ]
-
-
-@mcp_server.read_resource()
-async def handle_read_resource(uri: str) -> str:
-    """Read a resource"""
-    if uri == "mock://resource1":
-        return "This is the content of mock resource 1"
-    elif uri == "mock://resource2":
-        return '{"data": "Mock resource 2 content", "type": "json"}'
-    else:
-        return f"Unknown resource: {uri}"
-
-
-@mcp_server.list_prompts()
-async def handle_list_prompts() -> list[Prompt]:
-    """List available prompts"""
-    return [
-        Prompt(
-            name="greeting",
-            description="A simple greeting prompt",
-            arguments=[]
-        ),
-        Prompt(
-            name="summarize",
-            description="Summarize text",
-            arguments=[
-                {"name": "text", "description": "Text to summarize", "required": True}
+        return success_response(request_id, {
+            "content": [
+                {
+                    "type": "text",
+                    "text": text
+                }
             ]
-        )
+        })
+
+    if method == "resources/list":
+        return success_response(request_id, {"resources": RESOURCES})
+
+    if method == "resources/read":
+        uri = params.get("uri")
+        if uri == "mock://resource1":
+            text = "This is the content of mock resource 1"
+        elif uri == "mock://resource2":
+            text = '{"data": "Mock resource 2 content", "type": "json"}'
+        else:
+            text = f"Unknown resource: {uri}"
+
+        return success_response(request_id, {
+            "contents": [
+                {
+                    "uri": uri,
+                    "mimeType": "text/plain",
+                    "text": text
+                }
+            ]
+        })
+
+    if method == "prompts/list":
+        return success_response(request_id, {"prompts": PROMPTS})
+
+    if method == "prompts/get":
+        name = params.get("name")
+        arguments = params.get("arguments") or {}
+
+        if name == "greeting":
+            text = "Hello! How can I help you today?"
+        elif name == "summarize":
+            text = f"Please summarize the following text:\n\n{arguments.get('text', '')}"
+        else:
+            text = f"Unknown prompt: {name}"
+
+        return success_response(request_id, {
+            "messages": [
+                {
+                    "role": "user",
+                    "content": {
+                        "type": "text",
+                        "text": text
+                    }
+                }
+            ]
+        })
+
+    if isinstance(method, str) and method.startswith("notifications/"):
+        return JSONResponse({})
+
+    return error_response(request_id, -32601, f"Method not found: {method}")
+
+
+app = Starlette(
+    routes=[
+        Route("/", handle_root, methods=["GET"]),
+        Route("/health", handle_health, methods=["GET"]),
+        Route("/mcp", handle_mcp_discovery, methods=["GET"]),
+        Route("/mcp", handle_mcp_request, methods=["POST"]),
     ]
-
-
-@mcp_server.get_prompt()
-async def handle_get_prompt(name: str, arguments: dict | None) -> list[PromptMessage]:
-    """Get a prompt"""
-    if name == "greeting":
-        return [
-            PromptMessage(
-                role="user",
-                content=TextContent(type="text", text="Hello! How can I help you today?")
-            )
-        ]
-    elif name == "summarize":
-        text = arguments.get("text", "") if arguments else ""
-        return [
-            PromptMessage(
-                role="user",
-                content=TextContent(
-                    type="text",
-                    text=f"Please summarize the following text:\n\n{text}"
-                )
-            )
-        ]
-    else:
-        return [
-            PromptMessage(
-                role="user",
-                content=TextContent(type="text", text=f"Unknown prompt: {name}")
-            )
-        ]
+)
 
 
 if __name__ == "__main__":
-    # Create SSE transport
-    sse = SseServerTransport("/mcp")
-
-    # Create ASGI app with routes
-    async def handle_sse(request):
-        async with sse.connect_sse(request.scope, request.receive, request._send) as (read_stream, write_stream):
-            await mcp_server.run(read_stream, write_stream, mcp_server.create_initialization_options())
-
-    async def handle_messages(request):
-        async with sse.connect_messages(request.scope, request.receive, request._send) as (read_stream, write_stream):
-            await mcp_server.run(read_stream, write_stream, mcp_server.create_initialization_options())
-
-    app = Starlette(
-        routes=[
-            Route("/mcp/sse", handle_sse, methods=["GET"]),
-            Route("/mcp/message", handle_messages, methods=["POST"]),
-        ]
-    )
-
     uvicorn.run(app, host="0.0.0.0", port=3000)

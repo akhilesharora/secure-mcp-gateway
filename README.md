@@ -212,6 +212,45 @@ Install the MCP extension and configure:
 }
 ```
 
+### Use the `smcp` CLI
+
+The project also ships an npm CLI package named `smcp` for common gateway, group, and server workflows.
+
+**Install globally:**
+```bash
+npm install -g smcp
+smcp --help
+```
+
+**Run without global install:**
+```bash
+npx smcp commands
+```
+
+**Run from this repo while developing:**
+```bash
+npm install
+npm run smcp -- commands
+```
+
+**Examples:**
+```bash
+# Local runtime helpers
+smcp gateway start
+smcp gateway logs
+
+# API-backed commands
+smcp server list
+smcp group list
+smcp group create engineering --description "Engineering tools" --servers github,slack
+```
+
+By default, `smcp` targets `http://localhost:8000` for API-backed commands. Override with:
+
+```bash
+export SMCP_GATEWAY_URL="http://your-host:8000"
+```
+
 ## 🏗️ Architecture
 
 ```
